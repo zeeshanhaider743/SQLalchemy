@@ -19,22 +19,29 @@ class SQL:
         z = y.copy()
         user_credentials = pd.concat([y,z], ignore_index=True)
         user_credentials.to_sql('user_credentials', con=self.engine)
+        self.engine.execute("""ALTER TABLE `sql`.`user_credentials` 
+CHANGE COLUMN `index` `index` INT NOT NULL ,
+CHANGE COLUMN `user_id` `user_id` INT NOT NULL ;
+""")
         return user_credentials
 
-    def add_key(self, query):
+    def run_query(self, query):
         self.engine.execute(query)
+
 obj = SQL('mysql+pymysql://root:12345678@localhost/sql')
 
 obj.read_sql()
 
-d = obj.get_duplicates()
-#print(d)
 
-query2 = """ALTER TABLE user_credentials
-ADD FOREIGN KEY (index) REFERENCES user_details(user_id);"""
+print(obj.get_duplicates())
 
-query1 = """ALTER TABLE user_credentials
-ADD PRIMARY KEY (index);"""
+query2 = """ALTER TABLE `sql`.`user_credentials` 
+ADD CONSTRAINT `fk`
+  FOREIGN KEY (`user_id`)
+  REFERENCES `sql`.`user_details` (`user_id`)
+  ON DELETE NO ACTION
+  ON UPDATE NO ACTION;"""
 
-obj.add_key(query1)
-obj.add_key(query2)
+
+obj.run_query(query2)
+
